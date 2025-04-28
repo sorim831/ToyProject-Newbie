@@ -1,16 +1,36 @@
 <template>
   <div class="main-container">
     <div class="content-box">
-      <h1 class="title">대충 개쩌는 제목</h1>
-      <button class="start-button">시작하기</button>
-      <button class="end-button">종료</button>
+      <h1 class="title">뉴비</h1>
+      <button class="start-button" @click="goToManagePage">시작하기</button>
+      <button class="end-button" @click="closeWindow">종료</button>
     </div>
   </div>
 </template>
 
 <script>
+import { useRouter } from "vue-router"; // 라우터 사용
+
 export default {
   name: "MainPage",
+  setup() {
+    const router = useRouter();
+
+    // 시작하기 버튼 클릭 시 ManagePage로 이동
+    const goToManagePage = () => {
+      router.push("/manage");
+    };
+
+    // 종료 버튼 클릭 시 창 닫기
+    const closeWindow = () => {
+      window.close();
+    };
+
+    return {
+      goToManagePage,
+      closeWindow,
+    };
+  },
 };
 </script>
 
@@ -18,7 +38,7 @@ export default {
 /* 흰색 박스 */
 .content-box {
   background-color: white;
-  width: 300px;
+  width: 400px;
   height: 500px;
   padding: 20px;
   border-radius: 10px;
