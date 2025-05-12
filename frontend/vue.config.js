@@ -11,4 +11,7 @@ module.exports = defineConfig({
       },
     },
   },
+  devServer: {
+    port: 3000, // 원하는 포트로 설정
+  },
 });
