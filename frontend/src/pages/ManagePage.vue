@@ -11,7 +11,7 @@
 
       <div v-if="officersOpen" class="section-content">
         <div v-for="(officer, index) in officers" :key="index" class="item">
-          {{ officer.name }} / {{ officer.rank }} / 기타정보
+          {{ officer.name }} / {{ officer.m_rank }} / 기타정보
           <button @click="editOfficer(index)">수정</button>
           <button @click="deleteOfficer(index)">삭제</button>
         </div>
@@ -19,7 +19,7 @@
         <!-- 간부 추가 폼 -->
         <div v-if="showOfficerForm" class="form">
           <input v-model="newOfficer.name" placeholder="이름" />
-          <input v-model="newOfficer.rank" placeholder="계급" />
+          <input v-model="newOfficer.m_rank" placeholder="계급" />
           <button @click="addOfficer">등록</button>
         </div>
 
@@ -54,7 +54,7 @@
           <tbody>
             <tr v-for="(soldier, index) in activeSoldiers" :key="index">
               <td>{{ soldier.name }}</td>
-              <td>{{ soldier.rank }}</td>
+              <td>{{ soldier.m_rank }}</td>
               <td>{{ soldier.enlistDate }}</td>
               <td>{{ soldier.dischargeDate }}</td>
               <td>{{ soldier.room }}</td>
@@ -75,7 +75,7 @@
             type="date"
             @change="autoFillRankAndDischarge"
           />
-          <input v-model="newSoldier.rank" placeholder="계급" readonly />
+          <input v-model="newSoldier.m_rank" placeholder="계급" readonly />
           <input
             v-model="newSoldier.dischargeDate"
             placeholder="전역날짜"
@@ -117,7 +117,7 @@
           <tbody>
             <tr v-for="(soldier, index) in dischargedSoldiers" :key="index">
               <td>{{ soldier.name }}</td>
-              <td>{{ soldier.rank }}</td>
+              <td>{{ soldier.m_rank }}</td>
               <td>{{ soldier.enlistDate }}</td>
               <td>{{ soldier.dischargeDate }}</td>
               <td>{{ soldier.room }}</td>
@@ -136,6 +136,7 @@
 
 <script>
 import { ref, computed } from "vue";
+import axios from "axios";
 
 export default {
   name: "ManagePage",
@@ -154,12 +155,12 @@ export default {
     const showSoldierForm = ref(false);
 
     // 추가할 간부/병사 데이터
-    const newOfficer = ref({ name: "", rank: "" });
+    const newOfficer = ref({ name: "", m_rank: "" });
     const newSoldier = ref({
       name: "",
       enlistDate: "",
       dischargeDate: "",
-      rank: "",
+      m_rank: "",
       room: "",
       memo: "",
     });
@@ -182,37 +183,76 @@ export default {
     };
 
     // 간부 추가
-    const addOfficer = () => {
-      officers.value.push({ ...newOfficer.value });
-      newOfficer.value.name = "";
-      newOfficer.value.rank = "";
-      showOfficerForm.value = false;
+    const addOfficer = async () => {
+      try {
+        const response = await axios.post(
+          `http://localhost:5000/manage`,
+          newOfficer.value
+        );
+        officers.value.push(response.data); // 백엔드 응답 데이터 반영
+        newOfficer.value.name = "";
+        newOfficer.value.m_rank = "";
+        showOfficerForm.value = false;
+      } catch (error) {
+        console.error("간부 등록 오류:", error);
+        alert("간부 등록 실패");
+      }
+    };
+
+    // 간부 목록 가져오기
+    const fetchOfficers = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/manage");
+        officers.value = response.data;
+      } catch (error) {
+        console.error("간부 목록 불러오기 실패:", error);
+      }
     };
 
     // 병사 추가
-    const addSoldier = () => {
-      soldiers.value.push({ ...newSoldier.value });
-      newSoldier.value = {
-        name: "",
-        enlistDate: "",
-        dischargeDate: "",
-        rank: "",
-        room: "",
-        memo: "",
-      };
-      showSoldierForm.value = false;
+    const addSoldier = async () => {
+      try {
+        const response = await axios.post(
+          `http://localhost:5000/soldiers`,
+          newSoldier.value
+        );
+        soldiers.value.push(response.data); // 백엔드 응답 데이터 반영
+        newSoldier.value = {
+          name: "",
+          enlistDate: "",
+          dischargeDate: "",
+          m_rank: "",
+          room: "",
+          memo: "",
+        };
+        showSoldierForm.value = false;
+      } catch (error) {
+        console.error("병사 등록 오류:", error);
+        alert("병사 등록 실패");
+      }
     };
 
     // 간부/병사 삭제
-    const deleteOfficer = (index) => {
-      officers.value.splice(index, 1);
+    const deleteOfficer = async (index) => {
+      const officer = officers.value[index];
+      try {
+        await axios.delete(`http://localhost:5000/officers/${officer.id}`); // 백엔드에서 ID 기준 삭제
+        officers.value.splice(index, 1);
+      } catch (error) {
+        console.error("간부 삭제 오류:", error);
+        alert("간부 삭제 실패");
+      }
     };
     // 병사 삭제
-    const deleteSoldier = (index, isDischarged = false) => {
-      if (isDischarged) {
-        dischargedSoldiers.value.splice(index, 1); // 전역자 목록에서 삭제
-      } else {
-        soldiers.value.splice(index, 1); // 일반병사 목록에서 삭제
+    const deleteSoldier = async (index, isDischarged = false) => {
+      const list = isDischarged ? dischargedSoldiers.value : soldiers.value;
+      const soldier = list[index];
+      try {
+        await axios.delete(`http://localhost:5000/soldiers/${soldier.id}`); // soldier.id 기준 삭제
+        soldiers.value = soldiers.value.filter((s) => s.id !== soldier.id);
+      } catch (error) {
+        console.error("병사 삭제 오류:", error);
+        alert("병사 삭제 실패");
       }
     };
 
@@ -237,12 +277,16 @@ export default {
           (today.getFullYear() - enlist.getFullYear()) * 12 +
           (today.getMonth() - enlist.getMonth());
 
-        if (months < 3) newSoldier.value.rank = "이병";
-        else if (months < 9) newSoldier.value.rank = "일병";
-        else if (months < 15) newSoldier.value.rank = "상병";
-        else newSoldier.value.rank = "병장";
+        if (months < 3) newSoldier.value.m_rank = "이병";
+        else if (months < 9) newSoldier.value.m_rank = "일병";
+        else if (months < 15) newSoldier.value.m_rank = "상병";
+        else newSoldier.value.m_rank = "병장";
       }
     };
+
+    // 페이지 로드 시 간부 목록 가져오기
+    fetchOfficers();
+    //fetchSoldiers();
 
     return {
       officersOpen,
