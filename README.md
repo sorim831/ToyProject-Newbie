@@ -19,5 +19,7 @@
 ## 기술스택 🛠
 
 - Frontend: Vue 3 + TypeScript
+  - npm run serve
 - Backend: NestJS + TypeScript
+  - npm run start
 - Database: MySQL
