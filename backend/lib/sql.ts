@@ -1,7 +1,7 @@
 const sql: { [key: string]: string } = {
   insertOfficer: `INSERT INTO officers (name, m_rank) VALUES (?, ?)`,
   getOfficers: `SELECT * FROM officers`,
-  // 필요 시 다른 쿼리도 추가
+  updateOfficer: `UPDATE officers SET name = ?, m_rank = ? WHERE id = ?`,
 };
 
 export default sql;

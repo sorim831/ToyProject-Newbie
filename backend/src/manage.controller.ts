@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Param } from '@nestjs/common';
 import { ManageService } from './manage.service';
 
 @Controller('manage')
@@ -13,5 +13,13 @@ export class ManageController {
   @Get()
   async findAll() {
     return await this.officerService.getOfficers();
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateBody: { name: string; rank: string },
+  ) {
+    return await this.officerService.updateOfficer(Number(id), updateBody);
   }
 }

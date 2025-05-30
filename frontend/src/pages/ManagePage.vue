@@ -10,10 +10,22 @@
       </div>
 
       <div v-if="officersOpen" class="section-content">
-        <div v-for="(officer, index) in officers" :key="index" class="item">
-          {{ officer.name }} / {{ officer.m_rank }} / 기타정보
-          <button @click="editOfficer(index)">수정</button>
-          <button @click="deleteOfficer(index)">삭제</button>
+        <div
+          v-for="(officer, index) in officers"
+          :key="officer.id"
+          class="item"
+        >
+          <div v-if="editIndex !== index">
+            {{ officer.name }} / {{ officer.m_rank }} / 기타정보
+            <button @click="editOfficer(index)">수정</button>
+            <button @click="deleteOfficer(index)">삭제</button>
+          </div>
+          <div v-else>
+            <input v-model="editingOfficer.name" />
+            <input v-model="editingOfficer.m_rank" />
+            <button @click="saveEdit(officer.id)">저장</button>
+            <button @click="cancelEdit">취소</button>
+          </div>
         </div>
 
         <!-- 간부 추가 폼 -->
@@ -146,6 +158,10 @@ export default {
     const soldiersOpen = ref(true);
     const dischargedOpen = ref(true);
 
+    // 수정 인덱스
+    const editIndex = ref(null); // 수정 중인 index 저장
+    const editingOfficer = ref({ name: "", m_rank: "" }); // 수정 중인 간부 데이터
+
     // 데이터
     const officers = ref([]);
     const soldiers = ref([]);
@@ -256,10 +272,36 @@ export default {
       }
     };
 
-    // 수정 (미구현)
-    const editOfficer = () => {
-      alert("수정 기능은 추후 추가 예정입니다!");
+    // 수정 (구현)
+    const editOfficer = (index) => {
+      editIndex.value = index;
+      const target = officers.value[index];
+      editingOfficer.value = { name: target.name, m_rank: target.m_rank };
     };
+
+    const saveEdit = async (id) => {
+      try {
+        const response = await axios.put(`http://localhost:5000/manage/${id}`, {
+          name: editingOfficer.value.name,
+          m_rank: editingOfficer.value.m_rank,
+        });
+
+        const index = officers.value.findIndex((o) => o.id === id);
+        if (index !== -1) officers.value[index] = response.data;
+
+        editIndex.value = null;
+      } catch (error) {
+        console.error("간부 수정 오류:", error);
+        alert("간부 수정 실패");
+      }
+    };
+
+    const cancelEdit = () => {
+      editIndex.value = null;
+      editingOfficer.value = { name: "", m_rank: "" };
+    };
+
+    // 병사 수정 (구현 예정)
     const editSoldier = () => {
       alert("수정 기능은 추후 추가 예정입니다!");
     };
@@ -308,6 +350,11 @@ export default {
       editOfficer,
       editSoldier,
       autoFillRankAndDischarge,
+
+      editIndex,
+      editingOfficer,
+      saveEdit,
+      cancelEdit,
     };
   },
 };

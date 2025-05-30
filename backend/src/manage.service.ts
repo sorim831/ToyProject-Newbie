@@ -18,4 +18,9 @@ export class ManageService {
     const officers = await db.query('getOfficers');
     return officers;
   }
+
+  async updateOfficer(id: number, updateBody: { name: string; rank: string }) {
+    await db.query('updateOfficer', [updateBody.name, updateBody.rank, id]);
+    return { id, ...updateBody };
+  }
 }
